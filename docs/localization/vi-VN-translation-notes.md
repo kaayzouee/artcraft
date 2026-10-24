@@ -64,3 +64,31 @@ Test kiểm tra đủ khóa, không làm mất placeholder, chuỗi tiếng Vi�
 4. Kiểm tra các luồng tạo ảnh/video, tải lên, thông báo lỗi, thanh toán và đăng nhập trước khi coi bản dịch là hoàn chỉnh.
 5. Mỗi đợt dịch cần đối chiếu hành vi gốc, rà soát thuật ngữ trong bảng trên và ghi rõ các mục chưa có bản dịch.
 
+
+
+## Rà soát yêu cầu i18n từ upstream
+
+Ngày rà soát: 24/10/2026. Các issue bên dưới vẫn là **đề xuất đang mở**, không nên xem là quyết định kiến trúc đã được maintainer phê duyệt.
+
+### Các issue liên quan trực tiếp
+
+- [ArtCraft #2382 — multi-language support with drop-in translation files](https://github.com/storytold/artcraft/issues/2382): đề xuất dùng thư viện i18n tiêu chuẩn (ví dụ `react-i18next`), một tệp JSON cho mỗi ngôn ngữ, tên ngôn ngữ hiển thị theo ngôn ngữ bản địa, dropdown tự phát hiện catalog, fallback về tiếng Anh khi thiếu khóa, và đổi ngôn ngữ tức thì. Issue còn đề cập nạp/chia sẻ tệp dịch do người dùng đóng góp.
+- [ArtCraft #2405 — detect, remember and centrally set interface language](https://github.com/storytold/artcraft/issues/2405): đề xuất thứ tự ưu tiên ngôn ngữ cho web build: lựa chọn đã lưu ở cấp bộ ứng dụng, cấu hình host `craft-config.json` (có thể khóa lựa chọn), tham số URL `?lang=`, danh sách `navigator.languages`, cuối cùng là tiếng Anh. Đây là đề xuất cho nhiều ứng dụng cùng origin, không chỉ ArtCraft.
+- [ArtCraft #2120 — localization of ArtCraft UI (Czech)](https://github.com/storytold/artcraft/issues/2120): người đóng góp đề cập các ứng dụng Craft khác có catalog, nhưng ArtCraft cần một quy trình/cấu trúc dịch rõ ràng.
+- [ArtCraft #2474 — Chinese localization is incomplete](https://github.com/storytold/artcraft/issues/2474): phản ánh các prompt và thao tác phụ cũng cần được bản địa hóa, không chỉ nhãn menu.
+
+### Chuẩn tham khảo trong các repo cùng hệ sinh thái
+
+- [`storytold/craft-i18n` — định dạng catalog](https://github.com/storytold/craft-i18n/blob/main/docs/catalog-format.md): catalog dạng TSV với các cột ngữ cảnh, chuỗi nguồn tiếng Anh và bản dịch; hỗ trợ ngữ cảnh phân biệt nghĩa, placeholder `{name}`, plural theo CLDR, tên ngôn ngữ bản địa và catalog chưa đầy đủ với fallback về tiếng Anh. CI kiểm tra khóa trùng, bản dịch rỗng, placeholder và dấu ba chấm cuối chuỗi.
+- [`storytold/craft-i18n` — cách tích hợp](https://github.com/storytold/craft-i18n/blob/main/docs/integration.md): mô hình dùng catalog chung và catalog riêng từng ứng dụng; thiếu bản dịch không làm hỏng ứng dụng và vẫn hiển thị văn bản tiếng Anh. Cách tích hợp trực tiếp hiện được mô tả cho Rust apps, nên không thể mặc định dùng thẳng thư viện này trong React frontend.
+- [PhotoCraft — hướng dẫn localization](https://github.com/storytold/photocraft/blob/main/docs/localization.md): nêu fallback theo locale, đổi ngôn ngữ không cần khởi động lại, giữ nguyên placeholder, kiểm thử độ bao phủ catalog, thử giao diện với chuỗi thật và kiểm tra lỗi font/ký tự bị cắt.
+- [PhotoCraft — nguyên tắc UI/localization](https://github.com/storytold/photocraft/blob/main/docs/ui-design.md): phân biệt khóa nội bộ với nhãn hiển thị, dùng ID ổn định cho hành vi và yêu cầu test ngăn thiếu bản dịch trong phần giao diện đã đánh dấu hoàn chỉnh.
+
+### Khoảng cách giữa prototype hiện tại và các yêu cầu upstream
+
+1. Prototype hiện tại dùng từ điển TypeScript tĩnh; chưa có catalog JSON/TSV có thể thêm mà không sửa code.
+2. Lựa chọn ngôn ngữ đang lưu trong `st-locale` ở từng ứng dụng; chưa dùng khóa dùng chung cho toàn bộ Craft apps, cấu hình host hoặc `?lang=`.
+3. Phát hiện tự động hiện dùng `navigator.language`; chưa xét đầy đủ thứ tự `navigator.languages` và đối chiếu catalog đã đăng ký.
+4. Các test hiện xác minh tính toàn vẹn của phần từ điển đã thêm; chưa có báo cáo coverage cho toàn bộ chuỗi giao diện và chưa chứng minh mọi prompt/thao tác phụ đã được dịch.
+
+Vì vậy, CI tạm thời của PR này chỉ xác nhận phần bản dịch thử nghiệm và khả năng build frontend. Trước khi mở rộng sang toàn bộ giao diện, nên quyết định định dạng catalog và cơ chế fallback theo hướng tương thích với mục tiêu upstream; không nên coi prototype là kiến trúc i18n cuối cùng.

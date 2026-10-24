@@ -1,14 +1,7 @@
 name: Temporary i18n validation
 
 on:
-  # Keep this workflow temporary and limited to the localization branch.
-  push:
-    branches:
-      - feat/vietnamese-localization-foundation
-    paths:
-      - ".github/workflows/temporary-i18n-ci.yml"
-      - "frontend/**"
-      - "docs/localization/**"
+  # Temporary PR validation; kept out of release and deployment workflows.
   pull_request:
     branches:
       - main
