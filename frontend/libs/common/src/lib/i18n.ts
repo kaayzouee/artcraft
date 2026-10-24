@@ -224,13 +224,32 @@ function lookupTranslation(locale: Locale, sourceText: string, context = ""): st
   return sourceText;
 }
 
+function selectPluralTemplate(template: string, locale: Locale, count: number): string {
+  const forms = template.split("|");
+  const categories = locale === "vi" ? ["other"] : ["one", "other"];
+  const category = new Intl.PluralRules(locale).select(count);
+  const index = categories.indexOf(category);
+  return forms[index >= 0 && index < forms.length ? index : forms.length - 1] ?? template;
+}
+
 export function getTranslation(
   locale: Locale,
   sourceText: string,
   options: TranslationOptions = {},
 ): string {
-  const template = lookupTranslation(locale, sourceText, options.context);
+  let template = lookupTranslation(locale, sourceText, options.context);
   const values = options.values ?? {};
+
+  if (options.context === "@plural") {
+    const rawCount = values.n;
+    const count = typeof rawCount === "number" || (typeof rawCount === "string" && rawCount.trim() !== "")
+      ? Number(rawCount)
+      : Number.NaN;
+    if (Number.isFinite(count)) {
+      template = selectPluralTemplate(template, locale, count);
+    }
+  }
+
   return template.replace(/\{([a-zA-Z0-9_.-]+)\}/g, (match, name: string) =>
     Object.prototype.hasOwnProperty.call(values, name)
       ? String(values[name])
