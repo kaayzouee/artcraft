@@ -13,8 +13,12 @@ import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
+import { registerAppCatalog, useLocale } from "@storyteller/common";
+import artcraftVietnameseCatalog from "./locales/vi/artcraft.tsv?raw";
 
 // TODO(bt,2025-04-19): Make these configurable
+registerAppCatalog("vi", artcraftVietnameseCatalog);
+
 const ENV = {
   GOOGLE_API: "https://studio.storyteller.ai",
   FUNNEL_API: "https://studio.storyteller.ai",
@@ -24,6 +28,7 @@ const ENV = {
 };
 
 const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
+  const locale = useLocale();
   console.log("GlobalSettingsManager()");
 
   SyncStorytellerApiConfig();
@@ -50,6 +55,10 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     }
     PostHogInit();
   }, [env]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale === "vi" ? "vi-VN" : "en";
+  }, [locale]);
 
   // Apply stored theme early on mount
   useEffect(() => {
