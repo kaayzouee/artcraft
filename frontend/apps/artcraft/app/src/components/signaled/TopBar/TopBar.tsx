@@ -40,7 +40,7 @@ import {
   GalleryViewToggle,
 } from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
-import { useTranslation, type TranslationKey } from "@storyteller/common";
+import { useTranslation, type TranslationFunction } from "@storyteller/common";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
@@ -88,12 +88,12 @@ const CREDITS_POLL_INTERVAL = 60_000; // milliseconds
 
 // NB: See `TabState` for the default tab. The Apps ("More") entry is first so
 // it's the landing tab and leftmost in the switcher.
-const createAppMenuTabs = (t: (key: TranslationKey) => string): MenuIconItem[] => [
+const createAppMenuTabs = (t: TranslationFunction): MenuIconItem[] => [
   {
     id: "APPS",
-    label: t("nav.home"),
+    label: t("Home"),
     icon: <HouseIcon />,
-    description: t("nav.homeDescription"),
+    description: t("Explore all apps and miniapps"),
     large: true,
     tooltipContent: <AppsQuickMenu />,
     tooltipInteractive: true,
@@ -131,10 +131,10 @@ const CreditsCoinWithStatus = ({
 
   const tooltipMessage =
     iconStatus === "failed"
-      ? t("credits.refreshFailed")
+      ? t("Couldn't refresh your balance.")
       : iconStatus === "recovered"
-        ? t("credits.upToDate")
-        : t("credits.refreshing");
+        ? t("Balance up to date.")
+        : t("Refreshing your balance — the current amount may not be up to date.");
 
   const showRetry = iconStatus === "slow" || iconStatus === "failed";
 
@@ -161,7 +161,7 @@ const CreditsCoinWithStatus = ({
               className="h-7 self-start px-2 text-xs"
               onClick={handleRetry}
             >
-              {t("common.retry")}
+              {t("Retry")}
             </Button>
           )}
         </div>

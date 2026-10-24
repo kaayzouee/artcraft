@@ -1,98 +1,97 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   getLocale,
+  getLocaleName,
   getTranslation,
+  parseCatalog,
   setLocale,
-  translationMessages,
-  type TranslationKey,
+  vietnameseCommonCatalog,
 } from "./i18n";
 
-const placeholderPattern = /\{([a-zA-Z0-9_.-]+)\}|(%(?:\d+\$)?[-+#0 ]*(?:\d+|\*)?(?:\.\d+)?[sdif])/g;
+const placeholderPattern = /\{([a-zA-Z0-9_.-]+)\}/g;
 
 function placeholders(value: string): string[] {
   return [...value.matchAll(placeholderPattern)]
-    .map((match) => (match[1] ? `{${match[1]}}` : match[2]))
+    .map((match) => match[0])
     .sort();
 }
 
-describe("Vietnamese localization quality", () => {
-  const originalLocale = getLocale();
+const originalLocale = getLocale();
 
-  afterEach(() => {
-    setLocale(originalLocale);
-  });
+afterEach(() => {
+  setLocale(originalLocale);
+  localStorage.removeItem("craft.language");
+  localStorage.removeItem("st-locale");
+});
 
-  it("keeps the same translation keys in English and Vietnamese", () => {
-    expect(Object.keys(translationMessages.vi).sort()).toEqual(
-      Object.keys(translationMessages.en).sort(),
+describe("shared craft-i18n TSV catalog", () => {
+  it("parses comments, BOM, CRLF, and documented column escapes", () => {
+    const entries = parseCatalog(
+      "\uFEFF# a comment\r\nmenu\tFirst\\tsecond\tDòng\\tthứ hai\r\n\r\n",
+      "fixture.tsv",
     );
-  });
-
-  it("recognizes named, indexed, and printf-style placeholders", () => {
-    expect(placeholders("{count} {0} %s %1$s %02d %-10.2f")).toEqual([
-      "%-10.2f",
-      "%02d",
-      "%1$s",
-      "%s",
-      "{0}",
-      "{count}",
+    expect(entries).toEqual([
+      { context: "menu", source: "First\tsecond", translation: "Dòng\tthứ hai" },
     ]);
   });
 
-  it("preserves interpolation placeholders in every translation", () => {
-    for (const key of Object.keys(translationMessages.en) as TranslationKey[]) {
-      expect(placeholders(translationMessages.vi[key]), `placeholder mismatch for ${key}`)
-        .toEqual(placeholders(translationMessages.en[key]));
-    }
+  it("rejects malformed rows, duplicate keys, and empty translations", () => {
+    expect(() => parseCatalog("source only\tThiếu cột")).toThrow(/three TAB-separated columns/);
+    expect(() => parseCatalog("\tHome\tTrang chủ\n\tHome\tTrang chủ")).toThrow(/Duplicate/);
+    expect(() => parseCatalog("\tHome\t   ")).toThrow(/Empty translation/);
   });
 
-  it("contains no empty or whitespace-padded translations", () => {
-    for (const [key, value] of Object.entries(translationMessages.vi)) {
-      expect(value.trim(), `empty translation for ${key}`).not.toBe("");
-      expect(value.trim(), `unexpected surrounding whitespace for ${key}`).toBe(value);
-    }
+  it("uses shared translations before falling back to English source text", () => {
+    expect(getTranslation("vi", "Home")).toBe("Trang chủ");
+    expect(getTranslation("vi", "Settings")).toBe("Cài đặt");
+    expect(getTranslation("vi", "Uncatalogued source text")).toBe("Uncatalogued source text");
+    expect(getTranslation("en", "Home")).toBe("Home");
   });
 
-  it("stores Vietnamese translations in Unicode NFC form", () => {
-    for (const [key, value] of Object.entries(translationMessages.vi)) {
-      expect(value.normalize("NFC"), `non-NFC Vietnamese text at ${key}`).toBe(value);
-    }
+  it("gets the Vietnamese language-picker label from the @id row", () => {
+    expect(getLocaleName("en")).toBe("English");
+    expect(getLocaleName("vi")).toBe("Tiếng Việt");
   });
 
-  it("provides meaningful Vietnamese labels for the first localized UI slice", () => {
-    const requiredKeys: TranslationKey[] = [
-      "nav.home",
-      "settings.title",
-      "settings.general",
-      "settings.language",
-      "settings.languageDescription",
-      "language.english",
-      "settings.general.enterToGenerate",
-      "settings.general.groupModels",
-      "settings.general.keepShortcuts",
-    ];
-
-    for (const key of requiredKeys) {
-      expect(translationMessages.vi[key].trim(), `empty translation for ${key}`).not.toBe("");
-      expect(translationMessages.vi[key], `English fallback for ${key}`)
-        .not.toBe(translationMessages.en[key]);
-    }
-  });
-
-  it("interpolates variables without changing their values", () => {
-    expect(getTranslation("vi", "generation.generatedCount", { count: 12 })).toBe(
-      "Đã tạo 12 ảnh",
-    );
-    expect(getTranslation("vi", "gallery.selectedCount", { count: 3 })).toBe(
-      "Đã chọn 3 mục",
-    );
-  });
-
-  it("persists locale selection and synchronizes the document language", () => {
+  it("stores locale under the shared suite preference and updates the HTML language", () => {
     setLocale("vi");
-
-    expect(getLocale()).toBe("vi");
-    expect(window.localStorage.getItem("st-locale")).toBe("vi");
+    expect(localStorage.getItem("craft.language")).toBe("vi");
     expect(document.documentElement.lang).toBe("vi-VN");
+    setLocale("en");
+    expect(localStorage.getItem("craft.language")).toBe("en");
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("keeps shared Vietnamese strings non-empty, normalized, and placeholder-safe", () => {
+    expect(vietnameseCommonCatalog.length).toBeGreaterThan(100);
+
+    for (const entry of vietnameseCommonCatalog) {
+      expect(entry.translation.trim(), "empty or whitespace-only translation").not.toBe("");
+      expect(
+        entry.translation.normalize("NFC"),
+        "non-NFC translation for " + entry.source,
+      ).toBe(entry.translation);
+
+      if (entry.context === "@plural") {
+        const sourceForms = entry.source.split("|");
+        const translatedForms = entry.translation.split("|");
+        const expected = placeholders(sourceForms[0]);
+        expect(placeholders(sourceForms[1] ?? sourceForms[0])).toEqual(expected);
+        for (const form of translatedForms) {
+          expect(placeholders(form), "plural placeholder mismatch for " + entry.source)
+            .toEqual(expected);
+        }
+      } else {
+        expect(
+          placeholders(entry.translation),
+          "placeholder mismatch for " + entry.source,
+        ).toEqual(placeholders(entry.source));
+      }
+
+      expect(
+        entry.translation.endsWith("…"),
+        "trailing ellipsis mismatch for " + entry.source,
+      ).toBe(entry.source.endsWith("…"));
+    }
   });
 });

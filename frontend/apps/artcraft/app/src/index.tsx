@@ -13,9 +13,12 @@ import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
-import { useLocale } from "@storyteller/common";
+import { registerAppCatalog, useLocale } from "@storyteller/common";
+import artcraftVietnameseCatalog from "./locales/vi/artcraft.tsv?raw";
 
 // TODO(bt,2025-04-19): Make these configurable
+registerAppCatalog("vi", artcraftVietnameseCatalog);
+
 const ENV = {
   GOOGLE_API: "https://studio.storyteller.ai",
   FUNNEL_API: "https://studio.storyteller.ai",

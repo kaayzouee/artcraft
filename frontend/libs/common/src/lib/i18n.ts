@@ -1,80 +1,129 @@
 import { useSyncExternalStore } from "react";
+import sharedVietnameseCatalog from "./locales/vi/common.tsv?raw";
 
 export type Locale = "en" | "vi";
 export type TranslationValues = Record<string, string | number>;
+export interface TranslationOptions {
+  context?: string;
+  values?: TranslationValues;
+}
+export type TranslationFunction = (
+  sourceText: string,
+  options?: TranslationOptions,
+) => string;
 
-const STORAGE_KEY = "st-locale";
+const STORAGE_KEY = "craft.language";
+const LEGACY_STORAGE_KEY = "st-locale";
 
-const en = {
-  "common.retry": "Retry",
-  "nav.home": "Home",
-  "nav.homeDescription": "Explore all apps and miniapps",
-  "credits.refreshFailed": "Couldn't refresh your balance.",
-  "credits.upToDate": "Balance up to date.",
-  "credits.refreshing": "Refreshing your balance — the current amount may not be up to date.",
-  "settings.title": "Settings",
-  "settings.general": "General",
-  "settings.downloads": "Downloads",
-  "settings.accounts": "Accounts",
-  "settings.planCredits": "Plan & Credits",
-  "settings.appearance": "Appearance",
-  "settings.keybinds": "Keybinds",
-  "settings.alerts": "Alerts",
-  "settings.about": "About",
-  "settings.experimental": "Experimental",
-  "settings.language": "Language",
-  "settings.languageDescription": "Choose the language for localized parts of ArtCraft. More screens will be translated over time.",
-  "settings.general.enterToGenerate": "Enter to generate",
-  "settings.general.enterToGenerateDescription": "When enabled, Enter submits the prompt and Shift+Enter adds a new line. When disabled (default), both Enter and Shift+Enter add a new line; use the button to submit.",
-  "settings.general.groupModels": "Group models by family",
-  "settings.general.groupModelsDescription": "When enabled (default), the model picker groups models into submenus by family, such as Seedance or Veo. When disabled, every model appears in one flat list.",
-  "settings.general.keepShortcuts": "Keep shortcut cheatsheet open",
-  "settings.general.keepShortcutsDescription": "In editors, holding Ctrl (⌘ on Mac) alone for a few seconds shows keyboard shortcuts. When enabled, the cheatsheet stays visible after you release the key until you press Esc or click outside it. When disabled (default), it disappears as soon as you release the key.",
-  "language.english": "English",
-  "language.vietnamese": "Tiếng Việt",
-  "gallery.selectedCount": "{count} selected",
-  "generation.generatedCount": "{count} images generated",
-} as const;
+export interface CatalogEntry {
+  context: string;
+  source: string;
+  translation: string;
+}
 
-const vi: { [Key in keyof typeof en]: string } = {
-  "common.retry": "Thử lại",
-  "nav.home": "Trang chủ",
-  "nav.homeDescription": "Khám phá tất cả ứng dụng và ứng dụng mini",
-  "credits.refreshFailed": "Không thể cập nhật số lượt sử dụng còn lại.",
-  "credits.upToDate": "Đã cập nhật số lượt sử dụng còn lại.",
-  "credits.refreshing": "Đang cập nhật số lượt sử dụng còn lại — thông tin hiện tại có thể chưa phản ánh dữ liệu mới nhất.",
-  "settings.title": "Cài đặt",
-  "settings.general": "Chung",
-  "settings.downloads": "Tải xuống",
-  "settings.accounts": "Tài khoản",
-  "settings.planCredits": "Gói và lượt sử dụng",
-  "settings.appearance": "Giao diện",
-  "settings.keybinds": "Phím tắt",
-  "settings.alerts": "Thông báo",
-  "settings.about": "Giới thiệu",
-  "settings.experimental": "Thử nghiệm",
-  "settings.language": "Ngôn ngữ",
-  "settings.languageDescription": "Chọn ngôn ngữ cho những phần đã được bản địa hóa của ArtCraft. Các màn hình khác sẽ được dịch dần.",
-  "settings.general.enterToGenerate": "Nhấn Enter để tạo",
-  "settings.general.enterToGenerateDescription": "Khi bật, nhấn Enter để gửi câu lệnh và Shift+Enter để xuống dòng. Khi tắt (mặc định), cả Enter và Shift+Enter đều dùng để xuống dòng; hãy dùng nút gửi để bắt đầu tạo.",
-  "settings.general.groupModels": "Nhóm mô hình theo dòng",
-  "settings.general.groupModelsDescription": "Khi bật (mặc định), danh sách chọn mô hình được chia thành các menu con theo dòng, chẳng hạn Seedance hoặc Veo. Khi tắt, tất cả mô hình hiển thị trong cùng một danh sách.",
-  "settings.general.keepShortcuts": "Giữ mở bảng tra cứu phím tắt",
-  "settings.general.keepShortcutsDescription": "Trong trình chỉnh sửa, giữ riêng phím Ctrl (⌘ trên Mac) vài giây để hiển thị bảng tra cứu phím tắt. Khi bật, bảng vẫn hiển thị sau khi nhả phím và chỉ đóng khi nhấn Esc hoặc nhấp ra ngoài. Khi tắt (mặc định), bảng biến mất ngay khi nhả phím.",
-  "language.english": "Tiếng Anh",
-  "language.vietnamese": "Tiếng Việt",
-  "gallery.selectedCount": "Đã chọn {count} mục",
-  "generation.generatedCount": "Đã tạo {count} ảnh",
-};
+function unescapeColumn(value: string, catalogName: string, lineNumber: number): string {
+  let result = "";
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (character !== "\\") {
+      result += character;
+      continue;
+    }
 
-export const translationMessages = { en, vi } as const;
-export type TranslationKey = keyof typeof en;
+    const next = value[index + 1];
+    if (next === undefined) {
+      throw new Error("Trailing escape in " + catalogName + " line " + lineNumber);
+    }
+    index += 1;
+
+    if (next === "n") result += "\n";
+    else if (next === "t") result += "\t";
+    else if (next === "\\") result += "\\";
+    else {
+      throw new Error("Unsupported escape \\" + next + " in " + catalogName + " line " + lineNumber);
+    }
+  }
+  return result;
+}
+
+/**
+ * Parse the same three-column TSV format used by storytold/craft-i18n.
+ * Context and English source text form the lookup key; missing rows fall back to English.
+ */
+export function parseCatalog(contents: string, catalogName = "catalog.tsv"): CatalogEntry[] {
+  const rows: CatalogEntry[] = [];
+  const seen = new Set<string>();
+  const lines = contents.replace(/^\uFEFF/, "").split("\n");
+
+  lines.forEach((rawLine, index) => {
+    const lineNumber = index + 1;
+    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+    if (!line.trim() || line.trimStart().startsWith("#")) return;
+
+    const columns = line.split("\t");
+    if (columns.length !== 3) {
+      throw new Error("Expected three TAB-separated columns in " + catalogName + " line " + lineNumber);
+    }
+
+    const entry: CatalogEntry = {
+      context: unescapeColumn(columns[0], catalogName, lineNumber),
+      source: unescapeColumn(columns[1], catalogName, lineNumber),
+      translation: unescapeColumn(columns[2], catalogName, lineNumber),
+    };
+
+    if (!entry.source) {
+      throw new Error("Empty source text in " + catalogName + " line " + lineNumber);
+    }
+    if (!entry.translation.trim()) {
+      throw new Error("Empty translation in " + catalogName + " line " + lineNumber);
+    }
+
+    const key = catalogKey(entry.context, entry.source);
+    if (seen.has(key)) {
+      throw new Error("Duplicate context/source pair in " + catalogName + " line " + lineNumber);
+    }
+    seen.add(key);
+    rows.push(entry);
+  });
+
+  return rows;
+}
+
+function catalogKey(context: string, source: string): string {
+  return JSON.stringify([context, source]);
+}
+
+function indexCatalog(entries: readonly CatalogEntry[]): Map<string, string> {
+  return new Map(entries.map((entry) => [
+    catalogKey(entry.context, entry.source),
+    entry.translation,
+  ]));
+}
+
+/** Pinned snapshot of craft-i18n/locales/vi/common.tsv for the React frontend. */
+export const vietnameseCommonCatalog = parseCatalog(
+  sharedVietnameseCatalog,
+  "locales/vi/common.tsv",
+);
+
+const commonCatalogs = new Map<Locale, Map<string, string>>([
+  ["vi", indexCatalog(vietnameseCommonCatalog)],
+]);
+const appCatalogs = new Map<Locale, Map<string, string>>();
 
 const listeners = new Set<() => void>();
 let currentLocale: Locale | undefined;
 
-function isLocale(value: string | null | undefined): value is Locale {
-  return value === "en" || value === "vi";
+function notifyLocaleListeners(): void {
+  listeners.forEach((listener) => listener());
+}
+
+function normalizeLocale(value: string | null | undefined): Locale | undefined {
+  if (!value) return undefined;
+  const language = value.trim().toLowerCase().replace(/_/g, "-").split("-")[0];
+  if (language === "vi") return "vi";
+  if (language === "en") return "en";
+  return undefined;
 }
 
 function detectInitialLocale(): Locale {
@@ -82,15 +131,35 @@ function detectInitialLocale(): Locale {
     const stored = typeof window === "undefined"
       ? null
       : window.localStorage.getItem(STORAGE_KEY);
-    if (isLocale(stored)) return stored;
+    const normalizedStored = normalizeLocale(stored);
+    if (normalizedStored) return normalizedStored;
+
+    // Read preferences saved by the earlier prototype to avoid resetting existing users.
+    const legacyStored = typeof window === "undefined"
+      ? null
+      : window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    const normalizedLegacy = normalizeLocale(legacyStored);
+    if (normalizedLegacy) return normalizedLegacy;
   } catch {
     // Storage may be unavailable in private browsing or embedded webviews.
   }
 
-  return typeof navigator !== "undefined" &&
-    navigator.language.toLowerCase().startsWith("vi")
-    ? "vi"
-    : "en";
+  if (typeof window !== "undefined") {
+    const requested = normalizeLocale(new URLSearchParams(window.location.search).get("lang"));
+    if (requested) return requested;
+  }
+
+  if (typeof navigator !== "undefined") {
+    const preferences = navigator.languages?.length
+      ? navigator.languages
+      : [navigator.language];
+    for (const preference of preferences) {
+      const detected = normalizeLocale(preference);
+      if (detected) return detected;
+    }
+  }
+
+  return "en";
 }
 
 export function getLocale(): Locale {
@@ -113,7 +182,65 @@ export function setLocale(locale: Locale): void {
     document.documentElement.lang = locale === "vi" ? "vi-VN" : "en";
   }
 
-  listeners.forEach((listener) => listener());
+  notifyLocaleListeners();
+}
+
+/**
+ * Register an application's own catalog. App entries override common entries for the same
+ * locale/context/source pair. The returned disposer is useful for tests and hot reload.
+ */
+export function registerAppCatalog(locale: Locale, contents: string): () => void {
+  const previous = appCatalogs.get(locale);
+  const registered = indexCatalog(parseCatalog(contents, "artcraft.tsv"));
+  appCatalogs.set(locale, registered);
+  notifyLocaleListeners();
+
+  return () => {
+    if (appCatalogs.get(locale) !== registered) return;
+    if (previous) appCatalogs.set(locale, previous);
+    else appCatalogs.delete(locale);
+    notifyLocaleListeners();
+  };
+}
+
+function lookupTranslation(locale: Locale, sourceText: string, context = ""): string {
+  if (locale === "en") return sourceText;
+
+  const appCatalog = appCatalogs.get(locale);
+  const commonCatalog = commonCatalogs.get(locale);
+  const candidates = context
+    ? [[context, sourceText], ["", sourceText]]
+    : [["", sourceText]];
+
+  for (const [candidateContext, source] of candidates) {
+    const key = catalogKey(candidateContext, source);
+    const appTranslation = appCatalog?.get(key);
+    if (appTranslation !== undefined) return appTranslation;
+
+    const commonTranslation = commonCatalog?.get(key);
+    if (commonTranslation !== undefined) return commonTranslation;
+  }
+
+  return sourceText;
+}
+
+export function getTranslation(
+  locale: Locale,
+  sourceText: string,
+  options: TranslationOptions = {},
+): string {
+  const template = lookupTranslation(locale, sourceText, options.context);
+  const values = options.values ?? {};
+  return template.replace(/\{([a-zA-Z0-9_.-]+)\}/g, (match, name: string) =>
+    Object.prototype.hasOwnProperty.call(values, name)
+      ? String(values[name])
+      : match,
+  );
+}
+
+export function getLocaleName(locale: Locale): string {
+  if (locale === "en") return "English";
+  return getTranslation(locale, "language.name", { context: "@id" });
 }
 
 function subscribeToLocale(listener: () => void): () => void {
@@ -125,26 +252,16 @@ export function useLocale(): Locale {
   return useSyncExternalStore(subscribeToLocale, getLocale, () => "en");
 }
 
-export function getTranslation(
-  locale: Locale,
-  key: TranslationKey,
-  values: TranslationValues = {},
-): string {
-  const template = translationMessages[locale][key] ?? translationMessages.en[key] ?? key;
-  return template.replace(/\{([a-zA-Z0-9_.-]+)\}/g, (match, name: string) =>
-    Object.prototype.hasOwnProperty.call(values, name)
-      ? String(values[name])
-      : match,
-  );
-}
-
-export function useTranslation() {
+export function useTranslation(): {
+  locale: Locale;
+  setLocale: typeof setLocale;
+  t: TranslationFunction;
+} {
   const locale = useLocale();
 
   return {
     locale,
     setLocale,
-    t: (key: TranslationKey, values?: TranslationValues) =>
-      getTranslation(locale, key, values),
+    t: (sourceText, options) => getTranslation(locale, sourceText, options),
   };
 }
