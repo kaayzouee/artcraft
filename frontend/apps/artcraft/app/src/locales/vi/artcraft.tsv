@@ -27,6 +27,5 @@
 	Keep shortcut cheatsheet open	Giữ mở bảng tra cứu phím tắt
 	In editors, holding Ctrl (⌘ on Mac) alone for a few seconds shows keyboard shortcuts. When enabled, the cheatsheet stays visible after you release the key until you press Esc or click outside it. When disabled (default), it disappears as soon as you release the key.	Trong trình chỉnh sửa, giữ riêng phím Ctrl (⌘ trên Mac) vài giây để hiển thị bảng tra cứu phím tắt. Khi bật, bảng vẫn hiển thị sau khi nhả phím và chỉ đóng khi nhấn Esc hoặc nhấp ra ngoài. Khi tắt (mặc định), bảng biến mất ngay khi nhả phím.
 	Experimental features enabled	Đã bật tính năng thử nghiệm
-	Reset	Đặt lại
 	Reset experimental settings?	Đặt lại cài đặt thử nghiệm?
 	This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page.	Thao tác này sẽ ẩn mục Thử nghiệm và xóa các cài đặt thử nghiệm. Có thể bật lại mục này từ trang Giới thiệu.
