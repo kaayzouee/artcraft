@@ -4,6 +4,7 @@ import {
   getLocaleName,
   getTranslation,
   parseCatalog,
+  registerAppCatalog,
   setLocale,
   vietnameseCommonCatalog,
 } from "./i18n";
@@ -60,6 +61,24 @@ describe("shared craft-i18n TSV catalog", () => {
     setLocale("en");
     expect(localStorage.getItem("craft.language")).toBe("en");
     expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("selects CLDR plural forms and interpolates the count", () => {
+    const dispose = registerAppCatalog(
+      "vi",
+      "@plural\t{n} page|{n} pages\t{n} trang",
+    );
+    expect(
+      getTranslation("vi", "{n} page|{n} pages", { context: "@plural", values: { n: 3 } }),
+    ).toBe("3 trang");
+    dispose();
+
+    expect(
+      getTranslation("en", "{n} page|{n} pages", { context: "@plural", values: { n: 1 } }),
+    ).toBe("1 page");
+    expect(
+      getTranslation("en", "{n} page|{n} pages", { context: "@plural", values: { n: 3 } }),
+    ).toBe("3 pages");
   });
 
   it("keeps shared Vietnamese strings non-empty, normalized, and placeholder-safe", () => {
