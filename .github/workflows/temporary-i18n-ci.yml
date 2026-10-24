@@ -44,8 +44,8 @@ jobs:
         run: npx vitest run --config vite.config.ts src/lib/i18n.spec.ts
 
       - name: Run ArtCraft catalog tests
-        working-directory: frontend/apps/artcraft/app
-        run: npx vitest run --config ../vite.config.ts src/locales/vi/artcraft.spec.ts
+        working-directory: frontend/apps/artcraft
+        run: npx vitest run --config vite.config.ts app/src/locales/vi/artcraft.spec.ts
 
       - name: Build ArtCraft frontend
         working-directory: frontend
