@@ -1,0 +1,40 @@
+# Vietnamese (vi) interface catalog for ArtCraft.
+# Columns, separated by a TAB:  context <TAB> English source text <TAB> translation
+#   context  usually empty. A plain word distinguishes meanings; @plural, @id and @msg are reserved.
+#   escapes  \n  \t  \\ inside a column. {name} placeholders must be preserved.
+#   @plural  English one|other with the Vietnamese plural forms required by CLDR.
+#   Lines starting with # and blank lines are ignored. Missing entries fall back to English.
+#
+# Clean room: every entry was written from the plain meaning of the English text in ordinary
+# computing vocabulary. No other product's localization, string table or translated UI was
+# consulted or copied; add entries the same way.
+
+	Explore all apps and miniapps	Khám phá tất cả ứng dụng và ứng dụng mini
+	Couldn't refresh your balance.	Không thể cập nhật số lượt sử dụng còn lại.
+	Balance up to date.	Đã cập nhật số lượt sử dụng còn lại.
+	Refreshing your balance — current amount may not be up to date.	Đang cập nhật số lượt sử dụng còn lại — số liệu hiện tại có thể chưa phải mới nhất.
+	Retry	Thử lại
+	Downloads	Tải xuống
+	Accounts	Tài khoản
+	Plan & Credits	Gói và lượt sử dụng
+	Keybinds	Phím tắt
+	Alerts	Thông báo
+	Experimental	Thử nghiệm
+	Choose the language used in the interface. Prompts and generated content are not translated.	Chọn ngôn ngữ giao diện. Câu lệnh và nội dung được tạo ra không được dịch.
+	Enter to generate	Nhấn Enter để tạo
+	When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.	Khi bật, nhấn Enter để gửi câu lệnh và Shift+Enter để xuống dòng. Khi tắt (mặc định), cả Enter và Shift+Enter đều dùng để xuống dòng — chỉ dùng nút để gửi.
+	Group models by family	Nhóm mô hình theo dòng
+	When on (default), the model picker groups models into submenus by family, like Seedance or Veo. When off, every model shows in one flat list.	Khi bật (mặc định), danh sách chọn mô hình được chia thành các menu con theo dòng, chẳng hạn Seedance hoặc Veo. Khi tắt, tất cả mô hình hiển thị trong cùng một danh sách.
+	Keep shortcut cheatsheet open	Giữ mở bảng tra cứu phím tắt
+	In the editors, holding Ctrl (⌘ on Mac) alone for a few seconds shows a cheatsheet of the keyboard shortcuts. When on, it stays on screen after you release the key until you press Esc or click outside it. When off (default), it disappears as soon as you let go.	Trong trình chỉnh sửa, giữ riêng Ctrl (⌘ trên Mac) vài giây để hiện bảng tra cứu phím tắt. Khi bật, bảng vẫn hiển thị sau khi nhả phím cho đến khi nhấn Esc hoặc bấm ra ngoài. Khi tắt (mặc định), bảng biến mất ngay khi nhả phím.
+	Experimental features enabled	Đã bật tính năng thử nghiệm
+	Reset experimental settings?	Đặt lại cài đặt thử nghiệm?
+	This will hide the Experimental section and clear any experimental settings. You can unlock it again from the About page.	Thao tác này sẽ ẩn mục Thử nghiệm và xóa mọi cài đặt thử nghiệm. Bạn có thể bật lại mục này từ trang Giới thiệu.
+	Your credit balance	Số dư lượt sử dụng của bạn
+	Buy credits	Mua lượt sử dụng
+	Cost calculator	Công cụ tính chi phí
+	See details	Xem chi tiết
+	Support	Hỗ trợ
+	Upgrade	Nâng cấp
+	My Library	Thư viện của tôi
+	navigation	Thanh điều hướng
